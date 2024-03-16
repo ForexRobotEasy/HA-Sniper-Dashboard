@@ -1,0 +1,84 @@
+mql5
+// HA Sniper Dashboard
+// Developer: Forex Robot Easy Team
+// Website: forexroboteasy.com
+
+// Include necessary libraries and functions
+#include <Trade\Trade.mqh>
+#include <Indicators\HikenAshi.mqh>
+
+// Define constants
+#define SYMBOLS_COUNT 12
+#define ALERT_THRESHOLD 0.8
+
+// Define global variables
+bool initialized = false;
+CTrade trade;
+CHikenAshi ha;
+
+// Function to initialize the dashboard
+void OnInit()
+{
+   // Initialize HikenAshi indicator
+   ha.Create();
+
+   // Initialize trade functions
+   if (!trade.Init())
+   {
+      Print('Error initializing trade functions!');
+      return;
+   }
+
+   // Subscribe to necessary symbols
+   for (int i = 0; i < SYMBOLS_COUNT; i++)
+   {
+      string symbol = SymbolName(i);
+      trade.SymbolSelect(symbol, true);
+   }
+
+   initialized = true;
+}
+
+// Function to update the dashboard
+void OnTick()
+{
+   // Check if the dashboard is initialized
+   if (!initialized)
+      return;
+
+   // Loop through each currency pair
+   for (int i = 0; i < SYMBOLS_COUNT; i++)
+   {
+      string symbol = SymbolName(i);
+
+      // Calculate HikenAshi values
+      double haOpen = ha.Open(i);
+      double haClose = ha.Close(i);
+
+      // Calculate market dynamics
+      double haChange = haClose - haOpen;
+
+      // Check if the market is moving
+      if (MathAbs(haChange) > ALERT_THRESHOLD)
+      {
+         // Send real-time alert
+         string alertMessage = 'Currency pair ' + symbol + ' is moving!';
+         trade.Alert(alertMessage);
+      }
+   }
+}
+
+// Function to handle alerts
+void OnAlert(string message)
+{
+   // Display alert on the dashboard
+   Print('ALERT: ' + message);
+}
+
+// Function to handle deinitialization
+void OnDeinit(const int reason)
+{
+   // Clean up and close any open trades
+   trade.CloseAll();
+}
+
